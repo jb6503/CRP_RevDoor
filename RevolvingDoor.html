@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.Government {
+
+  fill: blue;
+  stroke: white;
+  stroke-opacity: .7;
+}
+.Private {
+  fill: red;
+  stroke: white;
+  stroke-opacity: .7;
+
+}
+
+.catbox{
+  opacity: .2;
+}
+
+.link {
+    stroke: red;
+  stroke-opacity: .6;
+  stroke-width: 10;
+}
+
+.yeartext{
+  font-family: sans-serif;
+  font-size: 50px;
+  opacity: .6;
+  pointer-events: none;
+  stroke: gray;
+  stroke-opacity: 1;
+  stroke-width: 1;
+}
+
+.histLabel{
+  font-family: sans-serif;
+  font-size: 20px;
+  opacity: 1;
+  pointer-events: none;
+
+}
+
+.heading{
+  font-family: sans-serif;
+  font-size: 50px;
+  opacity: .8;
+  pointer-events: none;
+  stroke: gray;
+  stroke-opacity: 1;
+  stroke-width: 1;
+
+}
+
+#tooltip {
+        position: absolute;
+        font-family: sans-serif;
+        width: 200px;
+        height: auto;
+        padding: 10px;
+        background-color: white;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 5;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+      }
+      
+#tooltip.hidden {
+  display: none;
+}
+
+#tooltip #value{
+      font-size: 14px;
+}
+
+</style>
+<title> Revolving Door Flow </title>
+<body>
+
+        <button id = "backward" align = "left" style="width: 70px"> Go Back one Year </button>
+        <button id = "forward" align = "left" style="width: 70px"> Advance one Year </button> 
+
+        
+<div id="tooltip" class="hidden" center = "right">
+        <p><strong><span id="tip_title"> </span></strong></p>
+        <p><span id="value">100</span></p>
+</div>
+
+<script type="text/javascript" src="../d3/d3.min.js"></script>  	
+<script>
+
+var height = window.innerHeight-100;
+var width = window.innerWidth-20;
+var padding = 5;
+var dataset;
+var yearset = 2000;
+var ready = true;
+shiftTime = 2000;
+
+//IMPORTANT: Set range max to largest intended circle area
+var rScale = d3.scale.linear()
+        .range([0, 25000]);
+
+
+var color = d3.scale.category20();
+
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("display", "block")
+    .style("margin", "auto");
+
+
+var govBox = svg.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", width/2)
+            .style("stroke", "black")
+            .style("fill", "none")
+            .style("stroke-width", 2);
+
+var privBox = svg.append("rect")
+            .attr("x", width/2)
+            .attr("y", 0)
+            .attr("height", height)
+            .attr("width", width/2)
+            .style("stroke", "black")
+            .style("fill", "none")
+            .style("stroke-width", 2)
+
+histLines = svg.append("g")
+
+for (var j = 0; j <= 1; j++) {
+
+              for (var i = 0; i <= 3; i++) {
+                svg.append("rect")
+                 .attr("x", j*width/2)
+                 .attr("y", height/4*i)
+                 .attr("height", height/4)
+                 .attr("width", width/2)
+                 .classed("catbox", true)     
+                 .style("stroke", "black")
+                 .style("fill", function(d){
+                  if (j == 0){
+                    return "lightblue";
+                  }
+                  else{
+                    return "green";
+                  }
+                 })
+                 .style("stroke-width", 2);
+
+              };
+      }
+
+var yeartext;
+var cmt =0, mem =0, agc =0, sta =0, org =0, aca =0, clt =0, frm =0;
+var emptypes = [cmt , mem, agc, sta, org, aca, clt, frm];
+var fields = ['Committee', 'Member', 'Agency', 'State-Level', 'Other', 'Academia', 'Lobby Client', 'Lobby Firm']
+
+
+
+
+d3.json("revDoor_json.txt", function(data){
+  dataset=data;
+  genvis();
+})
+
+function genvis(){
+  count = 0;
+
+  var circles = svg.selectAll("circle")
+     .data(dataset)
+     .enter()
+     .append("circle")
+     .attr("cx", function(d){
+      if (d.jobs[yearset].GP == 'p'){
+          return width/2 + padding + Math.random()*(width/2 - 2*padding);
+      }
+      else{
+          return padding + Math.random()*(width/2 - 2*padding);
+       
+      }
+   })
+     .attr("cy", function(d){
+                      if (d.jobs[(yearset).toString()].empl_type == 'frm'){
+                        return height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(yearset).toString()].empl_type == 'clt'){
+                        return height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(yearset).toString()].empl_type == 'aca'){
+                        return height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if (d.jobs[(yearset).toString()].empl_type == 'sta'){
+                        return height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(yearset).toString()].empl_type == 'agc'){
+                        return height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(yearset).toString()].empl_type == 'mem'){
+                        return height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(yearset).toString()].empl_type == 'cmt'){
+                        return padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else{
+                        return padding + Math.random()*(height/4 - 2*padding);
+                      }
+
+                    })
+     .attr("r", function(d){
+                      return d.jobs[(yearset).toString()].Rank + 2;
+                    })
+     .classed("Government", true)
+     .classed("shown", true)
+     .on("mouseover", function(d) {
+
+          posx = d3.select(this).attr("cx");
+          posy = d3.select(this).attr("cy");
+
+          var coordinates = [0, 0];
+          coordinates = d3.mouse(this);
+          var Mx = coordinates[0];
+          var My = coordinates[1];
+          var side;
+
+          if(Mx >= width/2){
+            side = -250;
+          }
+          else if (Mx <= width/2){
+            side = 50;
+          }
+
+          //Update the tooltip position and value
+          d3.select("#tooltip")
+            .style('left', (Mx+side) + "px")
+            .style("top", My + "px")           
+            .select("#value")
+            .html(GorP(d.jobs[yearset.toString()].GP) +"<br>"+
+                  "Title: " + d.jobs[yearset.toString()].title + "<br>"+
+                  "Employer: "+ d.jobs[yearset.toString()].employer
+                  +"<br>"+ d.jobs[yearset.toString()].begyear + ' - ' + d.jobs[yearset.toString()].endyear);
+              
+            d3.select("#tip_title")
+            .html(d.CRPName);
+         
+          d3.select("#tooltip").classed("hidden", false);
+
+          gethistory(d,posx,posy)
+
+
+
+         })
+     .on("mouseout", function() {
+     
+      //Hide the tooltip
+      d3.select("#tooltip").classed("hidden", true);
+      histLines.selectAll("line").remove();
+      histLines.selectAll("text").remove();
+
+     });
+
+          var yeartext = d3.select("svg")
+                  .append("text")
+                  .attr("x", width/2)
+                  .attr("y", 50)
+                  .classed("yeartext", true)
+                  .style("text-anchor", "middle")
+                  .text(yearset);
+
+           for (var j = 0; j <= 1; j++) {
+
+              for (var i = 0; i <= 3; i++) {
+                svg.append("text")
+                   .classed("heading", true)
+                   .attr("text-anchor", function(){
+                    if(j == 0){
+                      return 'start';} 
+
+                    else {
+                      return 'end';}
+                  })
+                   .attr("x", j*width + 10 -20*j)
+                   .attr("y", height/4+height/4*i - 10)
+                   .text(fields[j*4+i]);
+
+              };
+      }
+
+
+     d3.selectAll("button")
+       .on("click", function(){
+
+        if(ready){
+          var ButID = d3.select(this).attr("id");
+          var useyear = yearset;
+          if (ButID == "forward"){
+
+              svg.selectAll('circle')
+                    .each(function(d){
+                if(check_move(useyear,d,1) == 'move'){
+
+
+                  d3.select(this)
+                    .transition()
+                    .each("start", function(){
+                      ready = false;
+                    })
+                    .duration(shiftTime)
+                    .attr("cx", function(data){
+                      if (data.jobs[(useyear + 1).toString()].GP == 'p'){
+                        return width/2 + padding + Math.random()*(width/2 - 2*padding);
+                      }
+                      else if (data.jobs[(useyear + 1).toString()].GP == 'g'){
+                        return  padding + Math.random()*(width/2 - 2*padding);
+                      }
+                  })
+                    .attr("cy", function(d){
+                      if (d.jobs[(useyear + 1).toString()].empl_type == 'frm'){
+                        return height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                        
+                      }
+                      else if(d.jobs[(useyear + 1).toString()].empl_type == 'clt'){
+                        return height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear + 1).toString()].empl_type == 'aca'){
+                        return height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if (d.jobs[(useyear + 1).toString()].empl_type == 'sta'){
+                        return height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear + 1).toString()].empl_type == 'agc'){
+                        return height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear + 1).toString()].empl_type == 'mem'){
+                        return height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear + 1).toString()].empl_type == 'cmt'){
+                        return padding + Math.random()*(height/4 - 2*padding);
+
+                      }
+                      else{
+                        return padding + Math.random()*(height/4 - 2*padding);
+                      }
+
+
+                    })
+                    .attr("r", function(d){
+                      return d.jobs[(useyear+1).toString()].Rank + 2;
+                    })
+                    .attr("class", function(d){
+                      if(d.jobs[(useyear + 1).toString()].GP == 'g'){
+                        return "Government";
+                      }
+                      else if (d.jobs[(useyear + 1).toString()].GP == 'p'){
+                        return "Private";
+                      }
+                    })
+                    .each("end", function(){
+                        ready = true;
+                    });
+
+                    
+                    }
+
+                else if (check_move(useyear,d,1) == 'exit'){
+                  d3.select(this).attr("r", 0)
+                  d3.select(this).classed("shown", false);
+                }
+                else if (check_move(useyear,d,1) == 'stay'){
+                  d3.select(this).attr("r", function(d){
+                    return d.jobs[(useyear).toString()].Rank + 2;
+                  })
+                  d3.select(this).classed("shown", true);
+                }
+
+              });
+              yearset += 1;
+
+           };
+
+          if (ButID == "backward"){
+
+              svg.selectAll('circle')
+                    .each(function(d){
+                if(check_move(useyear,d,-1) == 'move'){
+                  d3.select(this)
+                    .transition()
+                    .each("start", function(){
+                      ready = false;
+                    })
+                    .duration(shiftTime)
+                    .attr("cx", function(d){
+                      if (d.jobs[(useyear -1).toString()].GP == 'p'){
+                        return width/2 + padding + Math.random()*(width/2 - 2*padding);
+                      }
+                      else if (d.jobs[(useyear -1).toString()].GP == 'g'){
+                        return padding + Math.random()*(width/2 - 2*padding);
+                      }
+                  })
+                    .attr("cy", function(d){
+                      if (d.jobs[(useyear -1).toString()].empl_type == 'frm'){
+                        return height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear -1).toString()].empl_type == 'clt'){
+                        return height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear -1).toString()].empl_type == 'aca'){
+                        return height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if (d.jobs[(useyear -1).toString()].empl_type == 'sta'){
+                        return height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear -1).toString()].empl_type == 'agc'){
+                        return height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear -1).toString()].empl_type == 'mem'){
+                        return height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else if(d.jobs[(useyear -1).toString()].empl_type == 'cmt'){
+                        return padding + Math.random()*(height/4 - 2*padding);
+                      }
+                      else{
+                        return padding + Math.random()*(height/4 - 2*padding);
+                      }
+
+                    })
+                    .attr("r", function(d){
+                      return d.jobs[(useyear-1).toString()].Rank + 2;
+                    })
+                    .attr("class", function(d){
+                      if(d.jobs[(useyear -1).toString()].GP == 'g'){
+                        return "Government";
+                      }
+                      else{
+                        return "Private";
+                      }
+                    })
+                    .each("end", function(){
+                        ready = true;
+
+                    });
+                    
+                    }
+
+                else if (check_move(useyear,d,-1) == 'exit'){
+                  d3.select(this).attr("r", 0);
+                }
+                else if (check_move(useyear,d,-1) == 'stay'){
+                  d3.select(this).attr("r", function(d){
+                    return d.jobs[(useyear).toString()].Rank + 2;
+                  })
+                }
+
+              });
+              yearset -= 1;
+
+          };
+          calltext();
+
+        }});
+
+}
+
+function check_move(useyear,data, increase){
+  if(data.jobs[(useyear + increase).toString()] != null && data.jobs[useyear.toString()] == null){
+          return 'move';
+  }
+  else if(data.jobs[(useyear + increase).toString()] != null && data.jobs[useyear.toString()] != null){
+      if(data.jobs[(useyear + increase).toString()].employer == data.jobs[useyear.toString()].employer && data.jobs[useyear.toString()].employer != null){
+          return 'stay';
+      }
+      else {
+          return 'move';
+      }
+    }
+  else{
+      return 'exit';
+  }
+}
+
+function GorP(input){
+  if (input == 'g'){
+    return "Government";
+  }
+  else if (input == 'p'){
+    return "Private";
+  }
+}
+
+function calltext(){
+  d3.select(".yeartext")
+                .text(yearset);
+}
+
+function gethistory(d, posx, posy){
+      var count = 0;
+      var i;
+      var px = posx;
+      var py = posy;
+      var Tx, Ty;
+
+      for (var i = yearset; i >= 1950; i--) {
+
+        try{ if(d.jobs[i.toString()].empl_type){
+              if(check_move(i,d,-1) == 'move'){
+                      if (d.jobs[(i).toString()].empl_type == 'frm'){
+                        Ty = height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                        Tx = width/2 + padding + Math.random()*(width/2 - 2*padding);
+
+                      }
+                      else if(d.jobs[(i).toString()].empl_type == 'clt'){
+                        Ty = height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                        Tx = width/2 + padding + Math.random()*(width/4 - 2*padding);
+                      }
+                      else if(d.jobs[(i).toString()].empl_type == 'aca'){
+                        Ty = height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                        Tx = width/2 + padding + Math.random()*(width/4 - 2*padding);
+                      }
+                      else if (d.jobs[(i).toString()].empl_type == 'sta'){
+                        Ty = height*3/4 + padding + Math.random()*(height/4 - 2*padding);
+                        Tx = padding + Math.random()*(width/4 - 2*padding);
+                      }
+                      else if(d.jobs[(i).toString()].empl_type == 'agc'){
+                        Ty = height*2/4 + padding + Math.random()*(height/4 - 2*padding);
+                        Tx = padding + Math.random()*(width/4 - 2*padding);
+                      }
+                      else if(d.jobs[(i).toString()].empl_type == 'mem'){
+                        Ty = height*1/4 + padding + Math.random()*(height/4 - 2*padding);
+                        Tx = padding + Math.random()*(width/4 - 2*padding);
+                      }
+                      else if(d.jobs[(i).toString()].empl_type == 'cmt'){
+                        Ty = padding + Math.random()*(height/4 - 2*padding);
+                        Tx = padding + Math.random()*(width/4 - 2*padding);
+                      }
+                      else{
+                        cy = padding + Math.random()*(height/4 - 2*padding);
+                        Tx = width/2 + padding + Math.random()*(width/4 - 2*padding);
+                      }
+                        histLines.append("line")
+                       .classed("link", true)
+                       .attr("x1", px)
+                       .attr("x2", Tx)
+                       .attr("y1", py)
+                       .attr("y2", Ty);
+                       histLines.append("text")
+                       .text(d.jobs[i].employer)
+                       .classed("histLabel", true)
+                       .attr("x", Tx)
+                       .attr("y", Ty);
+
+                       px = Tx;
+                       py = Ty;
+
+
+        }
+      }
+    }
+      catch(e){
+        continue;
+      }
+      };
+  };
+  
+function getFocusNode(){
+  
+}
+
+
+
+
+
+
+</script>
+</body>
